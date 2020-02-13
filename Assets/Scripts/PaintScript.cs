@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 using UnityEditor;
 using System.IO;
 public class PaintScript : MonoBehaviour {
@@ -20,6 +21,10 @@ public class PaintScript : MonoBehaviour {
     // Use this for initialization
     public GameObject BrushPrefab;
     bool matSaved = false;
+
+    
+    public Slider plateu ;
+    public bool useOnlyEdge = false;
     private GameObject brush;
 	void Start () {
         LoadCanvas();
@@ -254,43 +259,97 @@ public class PaintScript : MonoBehaviour {
 
     }
 
+    public void OnSliderValueChanged(Slider sld)
+    {
+        if(brush)
+        {
+
+            BrushScript bs = brush.GetComponent<BrushScript>();
+            bs.OnSliderValueChange(sld);
+        }
+    }
+
     void ColorNormalPixelsAsBrush(Texture2D normal2D,GameObject go, int originX, int originY)
     {
         BrushScript bs = brush.GetComponent<BrushScript>();
         bs.ComputeReach(originX, originY);
+     
+        List<Vector2> edges = new List<Vector2>() ;
         bool isStartEdge = true;
         int lastSavedX = 0;
-   
+        float maxDist = Distance(originX, originY, bs.startXIndex, bs.startYIndex);
+        //for (int y = bs.startYIndex; y < bs.endYIndex; y++)
+        //{
+        //    for (int x = bs.startXIndex; x < bs.endXIndex; x++)
+        //    {
+        //        Color temp = bs.GetNormalColor(x, y);
+        //        if (temp.a > 0)
+        //        {
+
+        //            if (isStartEdge)
+        //            {
+        //                Vector2 startEdgePixel = new Vector2(x, y);
+
+        //                edges.Add(startEdgePixel);
+        //                isStartEdge = false;
+        //                if (useOnlyEdge)
+        //                {
+        //                    if (temp.b > 0f)
+        //                    {
+        //                        Vector2 origin = new Vector2(originX, originY);
+        //                        Vector2 direction = new Vector2(x, y) - origin;
+        //                        Vector3 normalized = direction.normalized;
+        //                        temp = new Color(normalized.x, normalized.y, 1f);
+        //                        normal2D.SetPixel(x, y, temp);
+        //                        lastSavedX = x;
+        //                    }
+        //                }
+        //            }
+                    
+        //        }
+        //    }
+        //    Vector2 endEdgePixel = new Vector2(lastSavedX, y);
+        //    if (useOnlyEdge)
+        //    {
+              
+        //            Vector2 origin = new Vector2(originX, originY);
+        //            Vector2 direction = new Vector2(lastSavedX, y) - origin;
+        //            Vector3 normalized = direction.normalized;
+        //            Color temp = new Color(normalized.x, normalized.y, 1f);
+        //            normal2D.SetPixel(lastSavedX, y, temp);
+        //    }
+        //    edges.Add(endEdgePixel);
+        //    isStartEdge = true;
+        //}
+
         for (int y = bs.startYIndex; y < bs.endYIndex; y++)
         {
             for (int x = bs.startXIndex; x < bs.endXIndex; x++)
             {
-                
-                Color temp = bs.GetColor(x, y);
-                if (temp.a == 1)
+                Color temp2 = bs.GetColor(x, y);
+                Color temp = bs.GetNormalColor(x, y);
+                if (temp2.a >0f )
                 {
-                    
-                    //Blue will go from 0 to 255
-                    if (isStartEdge)
-                    {
-                        temp = new Color(1f,1f, temp.b);
 
-                        isStartEdge = false;
-                    }
-                    else
-                    {
-                        temp = new Color(0.5f, 0.5f, temp.b);
-                    }
-                    if(temp.b>=0.5f)
-                    {
-                        normal2D.SetPixel(x, y, temp);
-                    }
-                    lastSavedX = x;
+                   
+                    
+
+                        //float distanceInPercent = Distance(x, y, originX, originY) / maxDist;
+                        //if (distanceInPercent > plateu.value)
+                        //{
+                        //    Vector2 origin = new Vector2(originX, originY);
+                        //    Vector2 direction = new Vector2(x, y) - origin;
+                        //    Vector3 normalized = direction.normalized;
+                        //    temp = new Color(normalized.x, normalized.y, 1f);
+                        //}
+                          normal2D.SetPixel(x, y, temp);
+                 
+                    
                 }
             }
             
-            normal2D.SetPixel(lastSavedX, y, new Color(1f, 0f, 0f));
-            isStartEdge = true;
+           // normal2D.SetPixel(lastSavedX, y, new Color(1f, 0f, 0f));
+          //  isStartEdge = true;
         }
 
 
@@ -298,6 +357,35 @@ public class PaintScript : MonoBehaviour {
        
         //Change Color of all overlapping pixels
         //
+    }
+
+    
+
+    float MaxRadius(Vector2 origin, Vector2 edge)
+    {
+
+        return Distance(origin.x, origin.y, edge.x, edge.y);
+    }
+
+    //Vector2 GetPointInDirection(float x,float y,Vector2 origin,List<Vector2> edges)
+    //{
+    //    foreach(Vector2 edge in edges)
+    //    {
+    //        Vector2 distDirNorm = (edge - new Vector2(x, y)).normalized;
+    //        Vector2 originDirNorm = (edge - origin).normalized;
+    //        Debug.Log(distDirNorm + " " + originDirNorm);
+    //        if (distDirNorm == originDirNorm)
+    //            return edge;
+    //    }
+    //    return Vector2.zero;
+    //}
+    float Distance(float x,float y,float originX,float originY)
+    {
+        float brackA = originX - x;
+        float brackB = originY - y;
+        float eqWithoutSqrt = Mathf.Pow(brackA, 2) + Mathf.Pow(brackB, 2);
+        float eqWithSqrt = Mathf.Sqrt(eqWithoutSqrt);
+        return eqWithSqrt;
     }
 
     Color ConvertRGBToNormal(Color input)
